@@ -1,0 +1,31 @@
+Package: MBbioeq
+Title: Model-Based Bioequivalence Analysis Using SAEM and TOST
+Version: 0.1.0
+Authors@R: 
+    c(person("Eden", "BETE", email = "eden.bete.etu@univ-lille.fr", role = c("aut", "cre")),
+      person("Celia", "BENGUENNA", email = "celia.benguenna.etu@univ-lille.fr", role = c("aut")))
+Description: Performs model-based bioequivalence analysis for parallel-arm studies 
+    using Stochastic Approximation Expectation-Maximization (SAEM) estimation and 
+    Two One-Sided Tests (TOST) procedure. Supports 1- and 2-compartment pharmacokinetic 
+    models with optional absorption lag time. Implements Normal and Gallant corrections 
+    for TOST, and delta-method for Cmax variance calculation. Allows flexible random 
+    effects structures (diagonal, full, block) and multiple error models (additive, 
+    proportional, combined).
+License: GPL-3
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
+Imports: 
+    saemix,
+    car,
+    MASS,
+    stats,
+    utils
+Suggests:
+    testthat,
+    knitr,
+    rmarkdown,
+    ggplot2
+Depends: 
+    R (>= 3.5.0)

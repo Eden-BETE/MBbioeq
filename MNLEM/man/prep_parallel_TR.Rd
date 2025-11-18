@@ -6,22 +6,6 @@
 \usage{
 prep_parallel_TR(tab)
 }
-\arguments{
-\item{tab}{data.frame with the columns above (any order/case).}
-}
-\value{
-data.frame with columns: Id, Dose, Time, Concentration, Treat (0=R, 1=T)
-}
 \description{
-Required columns (case-insensitive): Id/Subject, Time/T, Concentration/Conc/DV, Treatment/Tr/Group.
-Optional column: Dose (if missing or NA, it is forward-filled within subject).
-}
-\details{
-Rules:
-\itemize{
-\item Validates names, renames to standard, and enforces T/R only for treatment.
-\item Forward-fills missing Dose by subject (value "from above") without explicit loops.
-\item Sorts by Id, then Time; returns columns exactly: Id, Dose, Time, Concentration, Treat.
-\item Treat is 0 for R and 1 for T.
-}
+Prepare dataset for saemix (parallel-arm T/R)
 }

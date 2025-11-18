@@ -2,7 +2,7 @@
 % Please edit documentation in R/hello.R
 \name{imports}
 \alias{imports}
-\title{1CPT TOST Toolkit Import Declarations}
+\title{MBbioeq - Model-Based Bioequivalence Analysis}
 \description{
-1CPT TOST Toolkit Import Declarations
+MBbioeq - Model-Based Bioequivalence Analysis
 }

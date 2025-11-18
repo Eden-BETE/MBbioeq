@@ -2,44 +2,51 @@
 % Please edit documentation in R/hello.R
 \name{run_tost}
 \alias{run_tost}
-\title{Run TOST analysis (1cpt / 1cpt_tlag / 2cpt / 2cpt_tlag)}
+\title{Run TOST analysis with model-based approach}
 \usage{
 run_tost(
   data_path,
   model = "1cpt",
   psi0 = NULL,
   omega_init = NULL,
-  default_dose = NULL,
+  covariance_structure = "diagonal",
+  error_model = "combined",
+  error_init = NULL,
   nb_chains = 10,
   nb_iter = c(300, 100),
   delta = log(1.25),
-  alpha = 0.05
+  alpha = 0.05,
+  verbose = FALSE
 )
 }
 \arguments{
-\item{data_path}{Path to dataset file.}
+\item{data_path}{Path to dataset file}
 
-\item{model}{One of: "1cpt" (default), "1cpt_tlag", "2cpt", "2cpt_tlag".}
+\item{model}{One of: "1cpt", "1cpt_tlag", "2cpt", "2cpt_tlag"}
 
-\item{psi0}{Numeric vector of length k (initial means). If NULL, registry defaults are used.}
+\item{psi0}{Initial parameter values (NULL = defaults)}
 
-\item{omega_init}{Numeric vector length k (diag variances) or kxk matrix. If NULL, small diag used.}
+\item{omega_init}{Initial random effects variance (vector or matrix)}
 
-\item{default_dose}{(deprecated) ignored; dose is forward-filled instead.}
+\item{covariance_structure}{"diagonal" or "full" or custom matrix}
 
-\item{nb_chains}{Number of SAEM chains.}
+\item{error_model}{"combined", "proportional", or "additive"}
 
-\item{nb_iter}{Vector c(iter_saem, iter_mcmc).}
+\item{error_init}{Initial error parameters (NULL = auto)}
 
-\item{delta}{Equivalence margin (default log(1.25)).}
+\item{nb_chains}{Number of SAEM chains}
 
-\item{alpha}{One-sided alpha (default 0.05).}
+\item{nb_iter}{Vector c(iter_saem, iter_mcmc)}
+
+\item{delta}{Equivalence margin (default log(1.25))}
+
+\item{alpha}{One-sided alpha (default 0.05)}
+
+\item{verbose}{Print SAEMIX output (default FALSE)}
 }
 \value{
-A list with fit, n, nb_t, k, varcov, and TOST results for AUC and Cmax.
+List with fit, estimates, CIs, and TOST decisions
 }
 \description{
-Fits the selected PK model with SAEM, computes delta-method for Cmax when
-available (1cpt implemented), and performs TOST (Normal/Student/Gallant)
-for β_AUC via β_CL. Gallant df is dynamic: df = n - k, with k = #PK params.
+Run TOST analysis with model-based approach
 }

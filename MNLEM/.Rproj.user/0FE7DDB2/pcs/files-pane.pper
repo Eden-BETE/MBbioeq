@@ -1,9 +1,13 @@
 {
     "sortOrder": [
         {
+            "columnIndex": 4,
+            "ascending": true
+        },
+        {
             "columnIndex": 2,
             "ascending": true
         }
     ],
-    "path": "~/Desktop/MBBE/MNLEM"
+    "path": "~/Desktop/MBBE/MNLEM/R"
 }

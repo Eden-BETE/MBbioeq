@@ -20,6 +20,7 @@ Imports:
     saemix,
     car,
     MASS,
+    VGAM,
     stats,
     utils
 Suggests:

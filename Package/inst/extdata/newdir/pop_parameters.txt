@@ -29,36 +29,39 @@ First 10 lines of data:
 ----          Model            ----
 -----------------------------------
 Nonlinear mixed-effects model
-  Model function:  PK 1cpt
+  Model function:  PK 1cpt_tlag
   Model type:  structural
 function(psi, id, xidep) {
       dose <- xidep[, 1]; tim <- xidep[, 2]
-      ka <- psi[id, 1]; V <- psi[id, 2]; CL <- psi[id, 3]
+      ka <- psi[id, 1]; V <- psi[id, 2]; CL <- psi[id, 3]; tlag <- psi[id, 4]
       k  <- CL / V
-      dose * ka / (V * (ka - k)) * (exp(-k * tim) - exp(-ka * tim))
+      eff_t <- pmax(tim - tlag, 0)
+      dose * ka / (V * (ka - k)) * (exp(-k * eff_t) - exp(-ka * eff_t)) * (tim >= tlag)
     }
-<bytecode: 0x12d28e038>
-<environment: namespace:MNLEM>
-  Nb of parameters: 3 
-      parameter names:  ka V CL 
+<bytecode: 0x1229d3e78>
+<environment: namespace:MBbioeq>
+  Nb of parameters: 4 
+      parameter names:  ka V CL tlag 
       distribution:
      Parameter Distribution Estimated
 [1,] ka        log-normal   Estimated
 [2,] V         log-normal   Estimated
 [3,] CL        log-normal   Estimated
+[4,] tlag      log-normal   Estimated
   Variance-covariance matrix:
-   ka V CL
-ka  1 0  0
-V   0 1  0
-CL  0 0  1
-  Error model: combined , initial values: a.1=0.1 b.1=0.1 
+     ka V CL tlag
+ka    1 0  0    0
+V     0 1  0    0
+CL    0 0  1    1
+tlag  0 0  1    1
+  Error model: combined , initial values: a.1=0.1 b.1=0.2 
   Covariate model:
-      [,1] [,2] [,3]
-Treat    1    1    1
+      [,1] [,2] [,3] [,4]
+Treat    1    1    1    1
     Initial values
-              ka   V   CL
-Pop.CondInit 1.5 0.5 0.04
-Cov.CondInit 0.0 0.0 0.00
+             ka  V CL tlag
+Pop.CondInit  5 50  1  0.5
+Cov.CondInit  0  0  0  0.0
 -----------------------------------
 ----    Key algorithm options  ----
 -----------------------------------
@@ -81,39 +84,44 @@ Cov.CondInit 0.0 0.0 0.00
 ----------------------------------------------------
 -----------------  Fixed effects  ------------------
 ----------------------------------------------------
-     Parameter      Estimate SE     CV(%) p-value
-[1,] ka             1.527    0.0783   5.1 -      
-[2,] beta_Treat(ka) 0.021    0.0740 354.6 7.8e-01
-[3,] V              0.525    0.0127   2.4 -      
-[4,] beta_Treat(V)  0.213    0.0348  16.3 9.5e-10
-[5,] CL             0.039    0.0019   4.7 -      
-[6,] beta_Treat(CL) 0.252    0.0676  26.8 1.9e-04
-[7,] a.1            0.216    0.0433  20.1 -      
-[8,] b.1            0.111    0.0081   7.3 -      
+      Parameter        Estimate SE     CV(%) p-value
+ [1,] ka               1.603    0.1340   8.4 -      
+ [2,] beta_Treat(ka)   0.019    0.1211 644.0 8.8e-01
+ [3,] V                0.529    0.0131   2.5 -      
+ [4,] beta_Treat(V)    0.210    0.0357  17.0 4.2e-09
+ [5,] CL               0.039    0.0018   4.7 -      
+ [6,] beta_Treat(CL)   0.252    0.0675  26.8 1.9e-04
+ [7,] tlag             0.012    0.0207 169.6 -      
+ [8,] beta_Treat(tlag) 0.271    2.1764 804.0 9.0e-01
+ [9,] a.1              0.219    0.0461  21.1 -      
+[10,] b.1              0.112    0.0083   7.4 -      
 ----------------------------------------------------
 -----------  Variance of random effects  -----------
 ----------------------------------------------------
-   Parameter Estimate SE     CV(%)
-ka omega2.ka 0.0257   0.0107 42   
-V  omega2.V  0.0058   0.0024 40   
-CL omega2.CL 0.0383   0.0101 26   
+      Parameter   Estimate SE     CV(%)
+ka    omega2.ka   0.0279   0.0138    50
+V     omega2.V    0.0058   0.0024    41
+CL    omega2.CL   0.0378   0.0101    27
+tlag  omega2.tlag 0.0251   4.9120 19598
+covar cov.CL.tlag 0.0111   0.1395  1261
 ----------------------------------------------------
 ------  Correlation matrix of random effects  ------
 ----------------------------------------------------
-          omega2.ka omega2.V omega2.CL
-omega2.ka 1         0        0        
-omega2.V  0         1        0        
-omega2.CL 0         0        1        
+            omega2.ka omega2.V omega2.CL omega2.tlag
+omega2.ka   1         0        0.00      0.00       
+omega2.V    0         1        0.00      0.00       
+omega2.CL   0         0        1.00      0.36       
+omega2.tlag 0         0        0.36      1.00       
 ----------------------------------------------------
 ---------------  Statistical criteria  -------------
 ----------------------------------------------------
 Likelihood computed by linearisation
-      -2LL= 687.6258 
-      AIC = 709.6258 
-      BIC = 728.2035 
+      -2LL= 690.5915 
+      AIC = 720.5915 
+      BIC = 745.9247 
 
 Likelihood computed by importance sampling
-      -2LL= 689.3936 
-      AIC = 711.3936 
-      BIC = 729.9713 
+      -2LL= 691.9115 
+      AIC = 721.9115 
+      BIC = 747.2447 
 ----------------------------------------------------

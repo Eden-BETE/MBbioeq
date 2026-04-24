@@ -4,29 +4,36 @@ Version: 0.1.0
 Authors@R: 
     c(person("Eden", "BETE", email = "eden.bete.etu@univ-lille.fr", role = c("aut", "cre")),
       person("Celia", "BENGUENNA", email = "celia.benguenna.etu@univ-lille.fr", role = c("aut")))
-Description: Performs model-based bioequivalence analysis for parallel-arm studies 
-    using Stochastic Approximation Expectation-Maximization (SAEM) estimation and 
-    Two One-Sided Tests (TOST) procedure. Supports 1- and 2-compartment pharmacokinetic 
-    models with optional absorption lag time. Implements Normal and Gallant corrections 
-    for TOST, and delta-method for Cmax variance calculation. Allows flexible random 
-    effects structures (diagonal, full, block) and multiple error models (additive, 
-    proportional, combined).
+Description: Performs model-based bioequivalence analysis for parallel-arm studies
+    using Stochastic Approximation Expectation-Maximization (SAEM) estimation
+    (via the 'saemix' package). Supports one-compartment pharmacokinetic models
+    with or without absorption lag time. Implements the Two One-Sided Tests
+    (TOST) with asymptotic normal and Gallant small-sample corrections, and the
+    Bayesian-Optimal Test (BOT) based on the folded-normal distribution.
+    Delta-method variance propagation is used for the Cmax endpoint. Flexible
+    random-effects structures (diagonal, full, block) and multiple residual
+    error models (additive, proportional, combined) are supported. Includes
+    diagnostic plots: spaghetti plots of individual profiles, forest plots of
+    geometric mean ratios with 90 percent confidence intervals, and folded-normal
+    decision plots for BOT.
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.2
-Imports: 
+RoxygenNote: 7.3.3
+Imports:
     saemix,
     car,
     MASS,
     VGAM,
     stats,
-    utils
+    utils,
+    graphics,
+    grDevices
 Suggests:
     testthat,
     knitr,
-    rmarkdown,
-    ggplot2
+    rmarkdown
+VignetteBuilder: knitr
 Depends: 
     R (>= 3.5.0)

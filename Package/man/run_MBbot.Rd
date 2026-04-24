@@ -2,7 +2,7 @@
 % Please edit documentation in R/Function.R
 \name{run_MBbot}
 \alias{run_MBbot}
-\title{Run Model-Based BOT Bioequivalence Analysis}
+\title{Run model-based BOT bioequivalence analysis}
 \usage{
 run_MBbot(
   data_path,
@@ -12,48 +12,99 @@ run_MBbot(
   covariance_structure = "diagonal",
   error_model = "combined",
   error_init = NULL,
-  nb_chains = 10,
-  nb_iter = c(300, 100),
+  nb_chains = 10L,
+  nb_iter = c(300L, 100L),
   delta = log(1.25),
   alpha = 0.05,
   verbose = FALSE
 )
 }
 \arguments{
-\item{data_path}{Path to dataset file}
+\item{data_path}{Character. Path to the dataset file.  The separator
+(space, tab, semicolon, or comma) is detected automatically.}
 
-\item{model}{One of: "1cpt", "1cpt_tlag", "2cpt", "2cpt_tlag"}
+\item{model}{Character. PK model: \code{"1cpt"} (one-compartment) or
+\code{"1cpt_tlag"} (one-compartment with absorption lag time).}
 
-\item{psi0}{Initial parameter values (NULL = defaults)}
+\item{psi0}{Named numeric vector of initial fixed-effects values
+(\code{ka}, \code{V}, \code{CL}, and optionally \code{tlag}).  \code{NULL} uses built-in
+defaults.}
 
-\item{omega_init}{Initial random effects variance (vector or matrix)}
+\item{omega_init}{Initial random-effects standard deviations (numeric
+vector of length \eqn{k}) or a full \eqn{k \times k} variance matrix.
+\code{NULL} uses \code{rep(0.05, k)}.}
 
-\item{covariance_structure}{"diagonal" or "full" or custom matrix}
+\item{covariance_structure}{\code{"diagonal"} (default), \code{"full"}, or a
+custom \eqn{k \times k} binary matrix indicating which random-effect
+covariances are estimated.}
 
-\item{error_model}{"combined", "proportional", or "constant"}
+\item{error_model}{Residual error model: \code{"combined"} (default),
+\code{"proportional"}, or \code{"constant"}.}
 
-\item{error_init}{Initial error parameters (NULL = auto)}
+\item{error_init}{Initial residual error parameter(s).  \code{NULL} uses
+\code{c(0.1, 0.1)} for \code{"combined"} and \code{0.1} otherwise.}
 
-\item{nb_chains}{Number of SAEM chains}
+\item{nb_chains}{Integer. Number of SAEM Markov chains (default \code{10}).}
 
-\item{nb_iter}{Vector c(iter_saem, iter_mcmc)}
+\item{nb_iter}{Integer vector \code{c(n_saem, n_mcmc)}. Number of SAEM
+iterations followed by MCMC iterations (default \code{c(300, 100)}).}
 
-\item{delta}{Equivalence margin (default log(1.25) for 0.80-1.25 ratio)}
+\item{delta}{Numeric. Equivalence margin on the log scale
+(default \code{log(1.25)}, corresponding to the 80–125 \\% ratio range).}
 
-\item{alpha}{One-sided significance level (default 0.05)}
+\item{alpha}{Numeric. One-sided significance level for the TOST
+(default \code{0.05}, yielding a 90 \\% CI).}
 
-\item{verbose}{Print SAEMIX output (default FALSE)}
+\item{verbose}{Logical. Print SAEMIX convergence output (default \code{FALSE}).}
 }
 \value{
-List containing fit object, estimates, test statistics, critical values, and BOT decisions for AUC and Cmax
+An invisible named list with the following elements:
+\itemize{
+\item \code{fit}: The fitted \code{SaemixObject} from \strong{saemix}.
+\item \code{model}: Name of the fitted PK model.
+\item \code{n}: Number of subjects.
+\item \code{k}: Number of PK parameters.
+\item \code{varcov}: Variance-covariance matrix of fixed effects.
+\item \code{auc}: List with elements \code{estimate} (GMR), \code{se} (SE of log-ratio),
+\code{statistic} (\eqn{|\hat\beta_{AUC}|}),
+\code{critical_value} (\eqn{c^*}), \code{decision} (logical).
+\item \code{cmax}: Same structure as \code{auc} for the Cmax endpoint.
+}
 }
 \description{
-Performs Bayesian-Optimal Test (BOT) for bioequivalence
-using a model-based approach with SAEMIX. Tests both AUC and Cmax (when available).
-Uses the folded normal distribution to determine the critical value.
+Fits a one-compartment nonlinear mixed-effects pharmacokinetic model via
+the SAEM algorithm and tests bioequivalence for AUC and Cmax using the
+\strong{Bayesian-Optimal Test (BOT)} procedure.
 }
+\section{Statistical method}{
+
+The population PK model and treatment log-ratios are estimated exactly as
+in \code{\link[=run_MBTost]{run_MBTost()}}.  The BOT test statistic is \eqn{T = |\hat\beta|}.
+Under the worst-case null hypothesis \eqn{|\beta| = \delta}, \eqn{T}
+follows a \strong{folded-normal distribution} with location \eqn{\delta} and
+scale \eqn{\hat\sigma}:
+\deqn{T \sim FN(\delta,\, \hat\sigma^2)}
+
+Bioequivalence is concluded when
+\deqn{T \;\le\; c^* = q_{FN}(\alpha;\, \delta,\, \hat\sigma),}
+where \eqn{q_{FN}(\alpha;\cdot)} is the \eqn{\alpha}-quantile of that
+folded-normal distribution (computed via \code{\link[VGAM:foldnormUC]{VGAM::qfoldnorm()}}).  The BOT is
+uniformly more powerful than TOST in many settings while controlling the
+type-I error at level \eqn{\alpha}.
+}
+
 \examples{
 \dontrun{
-result <- run_MBbot("data.txt", model = "1cpt")
+res <- run_MBbot(
+  data_path = system.file("extdata", "dataset_1.txt", package = "MBbioeq"),
+  model     = "1cpt",
+  psi0      = c(ka = 1.5, V = 0.5, CL = 0.04),
+  error_model = "combined"
+)
+plot_bot(res)
 }
+}
+\seealso{
+\code{\link[=plot_bot]{plot_bot()}} to visualise the decision; \code{\link[=run_MBTost]{run_MBTost()}} for the
+TOST alternative.
 }

@@ -1,0 +1,333 @@
+---
+title: "Introduction to MBbioeq"
+subtitle: "Model-Based Bioequivalence Analysis for Parallel-Arm Studies"
+author: "Eden BETE, Célia BENGUENNA"
+date: "`r Sys.Date()`"
+output:
+  rmarkdown::html_vignette:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+vignette: >
+  %\VignetteIndexEntry{Introduction to MBbioeq}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse  = TRUE,
+  comment   = "#>",
+  fig.width = 7,
+  fig.height = 5
+)
+```
+
+# Introduction
+
+**MBbioeq** implements *model-based bioequivalence (BE) analysis* for
+parallel-arm study designs using nonlinear mixed-effects pharmacokinetic (PK)
+modelling.  Classical NCA-based (non-compartmental analysis) BE methods
+require a sufficiently rich sampling design per subject; model-based methods
+can recover reliable treatment comparisons even from sparse designs because
+information is pooled across subjects through the population model.
+
+The package estimates a one-compartment PK model with the SAEM algorithm
+(**saemix** package) and then tests whether the Test (T) and Reference (R)
+formulations are bioequivalent on the AUC and C~max~ endpoints using two
+complementary procedures:
+
+| Procedure | Key idea |
+|-----------|----------|
+| **TOST** — Two One-Sided Tests | 90 % CI for the T/R ratio must lie within [0.80, 1.25] |
+| **BOT** — Bayesian-Optimal Test | Observed \|β̂\| must be ≤ the α-quantile of a folded-normal under H₀ |
+
+Both tests accept the same model fit, so the computational cost is the same.
+
+# Installation
+
+```{r install, eval = FALSE}
+# From a local source directory:
+devtools::install("path/to/MBbioeq")
+
+# Or once submitted to CRAN:
+install.packages("MBbioeq")
+```
+
+```{r load}
+library(MBbioeq)
+```
+
+# Dataset format
+
+## Required columns
+
+The dataset must be a plain text file (space-, tab-, semicolon-, or
+comma-separated) with a header row.  The following columns are required
+(exact names are case-insensitive; accepted synonyms are listed):
+
+| Canonical name | Accepted synonyms | Description |
+|----------------|-------------------|-------------|
+| `Id` | `subject`, `subj`, `sid` | Subject identifier |
+| `Time` | `t`, `hours`, `hr` | Sampling time (hours) |
+| `Concentration` | `conc`, `dv`, `y`, `obs` | Observed concentration (mg/L) |
+| `Treatment` | `treat`, `trt`, `tr`, `group`, `arm` | `"T"` = Test, `"R"` = Reference |
+| `Dose` | `amt` | Administered dose (optional if carried forward) |
+
+## Missing values
+
+Missing concentrations (pre-dose samples, BLQ values, etc.) should be
+coded as `.`, `NA`, or left empty.  Missing dose values are
+**forward-filled** within each subject; at least one dose value per subject
+must be present.
+
+## Example
+
+```
+Id Dose Time Treatment Concentration
+1  4    0    R         .
+1  .    0.5  R         2.22
+1  .    1.0  R         3.84
+1  .    2.0  R         4.53
+...
+21 4    0    T         .
+21 .    0.5  T         2.82
+```
+
+The bundled dataset `dataset_1.txt` is used throughout this vignette:
+
+```{r data-path}
+data_path <- system.file("extdata", "dataset_1.txt", package = "MBbioeq")
+```
+
+## Preparing the data
+
+`prep_parallel_TR()` standardises column names, validates treatment coding,
+and forward-fills missing doses.  It is called automatically inside
+`run_MBTost()` and `run_MBbot()`, but you can also call it directly:
+
+```{r prep, eval = FALSE}
+raw <- read.table(data_path, header = TRUE)
+tab <- prep_parallel_TR(raw)
+head(tab)
+#>   Id Dose Time Concentration Treat
+#> 2  1    4  0.5         2.217     0
+#> 3  1    4  1.0         3.840     0
+#> ...
+```
+
+# Spaghetti plot
+
+Before fitting any model it is good practice to inspect the raw profiles.
+`plot_spaghetti()` overlays all individual concentration-time curves, coloured
+by treatment group, with an optional group mean profile.
+
+```{r spaghetti, eval = FALSE}
+plot_spaghetti(data_path)
+```
+
+**How to read the plot:**
+
+- **Coloured lines (transparent)** — individual subjects.  Variability within
+  each group is immediately visible.
+- **Bold line** — arithmetic mean profile of the group.  A higher or earlier
+  peak for one treatment compared to the other is a first visual indication of
+  a potential difference.
+- If profiles overlap substantially, both T and R drive a similar exposure —
+  a good sign for bioequivalence.
+
+# TOST analysis
+
+## Running the test
+
+```{r tost-run, eval = FALSE}
+psi0      <- c(ka = 1.5, V = 0.5, CL = 0.04)
+omega_init <- c(0.2, 0.3, 0.2)   # diagonal random effects
+
+res_tost <- run_MBTost(
+  data_path   = data_path,
+  model       = "1cpt",
+  psi0        = psi0,
+  omega_init  = omega_init,
+  error_model = "combined",
+  error_init  = c(0.1, 0.2)
+)
+```
+
+A typical result looks like:
+
+```
+════════════════════════════════════════════════════════════
+              TOST BIOEQUIVALENCE RESULTS
+════════════════════════════════════════════════════════════
+  Model: 1cpt  | n = 40  | k = 3  | δ = 0.2231
+
+AUC RATIO (T/R):
+  Estimate        : 1.0142
+  90% CI (Normal) : [0.9287, 1.1073]  →  Bioequivalent
+  90% CI (Gallant): [0.9198, 1.1195]  →  Bioequivalent
+
+Cmax RATIO (T/R):
+  Estimate        : 1.0289
+  90% CI (Normal) : [0.9318, 1.1363]  →  Bioequivalent
+  90% CI (Gallant): [0.9214, 1.1473]  →  Bioequivalent
+════════════════════════════════════════════════════════════
+```
+
+## Forest plot
+
+```{r tost-plot, eval = FALSE}
+plot_tost(res_tost)
+```
+
+**How to read the forest plot:**
+
+- The **green shaded rectangle** is the bioequivalence acceptance zone
+  [0.80, 1.25].
+- Each row shows one endpoint × inference method combination: the **diamond**
+  is the geometric mean ratio (GMR), the **horizontal bar** is the 90 % CI,
+  and tick marks show the CI endpoints.
+- **Green** = CI fully inside the zone → Bioequivalent; **Red** = CI crosses a
+  boundary → Not bioequivalent.
+- The Gallant row always has a wider CI than the Normal row; it is the more
+  conservative (and more reliable for small n) inference.
+
+```{r tost-plot-show, eval = FALSE}
+# Display only the Gallant-corrected CIs:
+plot_tost(res_tost, method = "gallant")
+```
+
+# BOT analysis
+
+## Running the test
+
+```{r bot-run, eval = FALSE}
+res_bot <- run_MBbot(
+  data_path   = data_path,
+  model       = "1cpt",
+  psi0        = psi0,
+  omega_init  = omega_init,
+  error_model = "combined",
+  error_init  = c(0.1, 0.2)
+)
+```
+
+```
+════════════════════════════════════════════════════════════
+               BOT BIOEQUIVALENCE RESULTS
+════════════════════════════════════════════════════════════
+  Model: 1cpt  | n = 40  | k = 3  | δ = 0.2231
+
+AUC RATIO (T/R):
+  Estimate       : 1.0142
+  |beta_hat|     : 0.0141
+  Critical value : 0.1803
+  Decision       : Bioequivalent
+
+Cmax RATIO (T/R):
+  Estimate       : 1.0289
+  |beta_hat|     : 0.0285
+  Critical value : 0.1926
+  Decision       : Bioequivalent
+════════════════════════════════════════════════════════════
+```
+
+## Folded-normal decision plot
+
+```{r bot-plot, eval = FALSE}
+plot_bot(res_bot)
+```
+
+**How to read the folded-normal plot:**
+
+- The **bell-shaped curve** is the density of the folded-normal distribution
+  $FN(\delta, \hat\sigma^2)$ — this is the worst-case null distribution of
+  $|\hat\beta|$ when the true effect is exactly at the equivalence boundary
+  $\delta$.
+- The **dashed red line** ($c^*$) is the $\alpha$-quantile of that
+  distribution: by construction, $P(|\hat\beta| \le c^* \mid |\beta| = \delta)
+  = \alpha$.
+- The **solid blue line** is the observed $|\hat\beta|$.
+- **Green region** ($[0, c^*]$) — the acceptance region; if the blue line falls
+  here, bioequivalence is concluded.
+- **Red region** ($(c^*, \infty)$) — the rejection region.
+- The smaller $|\hat\beta|$ relative to $c^*$, the stronger the evidence for
+  bioequivalence.
+
+# PK model choice
+
+Two models are available:
+
+| Model | Parameters | Use when |
+|-------|-----------|---------|
+| `"1cpt"` | ka, V, CL | Simple oral absorption, no lag |
+| `"1cpt_tlag"` | ka, V, CL, tlag | Delayed absorption (e.g. enteric coating) |
+
+```{r tlag-example, eval = FALSE}
+res_tlag <- run_MBTost(
+  data_path   = data_path,
+  model       = "1cpt_tlag",
+  psi0        = c(ka = 1.5, V = 0.5, CL = 0.04, tlag = 0.5),
+  omega_init  = c(0.2, 0.3, 0.2, 0.1),
+  error_model = "combined"
+)
+plot_tost(res_tlag)
+```
+
+# Advanced options
+
+## Covariance structure
+
+Random effects can be assumed independent (`"diagonal"`, default) or fully
+correlated (`"full"`).  A custom binary matrix can also be passed:
+
+```{r cov-example, eval = FALSE}
+# Full covariance matrix (all off-diagonals estimated)
+run_MBTost(data_path, model = "1cpt", covariance_structure = "full")
+
+# Custom: only CL-V covariance
+omega_block <- matrix(c(1, 0, 0,
+                        0, 1, 1,
+                        0, 1, 1), nrow = 3)
+run_MBTost(data_path, model = "1cpt", covariance_structure = omega_block)
+```
+
+## Equivalence margin
+
+The default margin $\delta = \log(1.25)$ corresponds to the regulatory
+[0.80, 1.25] acceptance range.  Narrow therapeutic index drugs may use a
+tighter margin:
+
+```{r delta-example, eval = FALSE}
+run_MBTost(data_path, model = "1cpt", delta = log(1.111))  # 90–111 % range
+```
+
+## Significance level
+
+`alpha` sets the one-sided significance level; the two-sided confidence level
+is $1 - 2\alpha$.  The default `alpha = 0.05` yields a 90 % CI.
+
+```{r alpha-example, eval = FALSE}
+run_MBTost(data_path, model = "1cpt", alpha = 0.10)  # 80 % CI (more liberal)
+```
+
+# Saving plots
+
+All plot functions return their data invisibly, so you can capture them with
+standard R graphics devices:
+
+```{r save-plot, eval = FALSE}
+pdf("tost_result.pdf", width = 8, height = 5)
+plot_tost(res_tost)
+dev.off()
+
+png("spaghetti.png", width = 800, height = 500)
+plot_spaghetti(data_path)
+dev.off()
+```
+
+# Session information
+
+```{r session}
+sessionInfo()
+```

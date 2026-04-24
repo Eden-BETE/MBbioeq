@@ -2,10 +2,54 @@
 % Please edit documentation in R/Function.R
 \name{prep_parallel_TR}
 \alias{prep_parallel_TR}
-\title{Prepare dataset for saemix (parallel-arm T/R)}
+\title{Prepare a dataset for SAEMIX (parallel-arm T/R design)}
 \usage{
 prep_parallel_TR(tab)
 }
+\arguments{
+\item{tab}{A \code{data.frame} read from the study dataset.}
+}
+\value{
+A \code{data.frame} with columns \code{Id} (integer/character), \code{Dose} (numeric),
+\code{Time} (numeric), \code{Concentration} (numeric), and \code{Treat} (integer: 1 for
+Test, 0 for Reference), sorted by \code{Id} then \code{Time}.
+}
 \description{
-Prepare dataset for saemix (parallel-arm T/R)
+Reads and standardises a raw pharmacokinetic dataset for use with
+\code{\link[=run_MBTost]{run_MBTost()}} and \code{\link[=run_MBbot]{run_MBbot()}}.  The function accepts flexible column
+names (see Details), validates treatment coding, forward-fills missing
+dose values within each subject, and returns a tidy data frame with
+canonical column names.
+}
+\details{
+\strong{Required columns} (case-insensitive; accepted synonyms in parentheses):
+\describe{
+\item{\code{Id}}{Subject identifier (\code{subject}, \code{subj}, \code{sid}).}
+\item{\code{Time}}{Sampling time in hours (\code{t}, \code{hours}, \code{hr}).}
+\item{\code{Concentration}}{Observed drug concentration (\code{conc}, \code{dv}, \code{y},
+\code{obs}).}
+\item{\code{Treatment}}{Group indicator: \code{"T"} for Test, \code{"R"} for Reference
+(\code{treat}, \code{trt}, \code{tr}, \code{group}, \code{arm}).}
+}
+
+\strong{Optional column:}
+\describe{
+\item{\code{Dose}}{Administered dose (\code{amt}).  If absent or partially
+missing, the last observed dose is carried forward within each subject.
+At least one dose value per subject must be present.}
+}
+
+Missing concentrations should be coded as \code{NA}, \code{"."}, or \code{""} in the
+source file; pre-dose rows (time 0) with a missing concentration are
+retained and filtered inside the fitting functions.
+}
+\examples{
+\dontrun{
+raw <- read.table("dataset_1.txt", header = TRUE)
+tab <- prep_parallel_TR(raw)
+head(tab)
+}
+}
+\seealso{
+\code{\link[=run_MBTost]{run_MBTost()}}, \code{\link[=run_MBbot]{run_MBbot()}}, \code{\link[=plot_spaghetti]{plot_spaghetti()}}
 }

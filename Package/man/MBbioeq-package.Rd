@@ -4,10 +4,37 @@
 \name{MBbioeq-package}
 \alias{MBbioeq}
 \alias{MBbioeq-package}
-\title{MBbioeq: Model-Based Bioequivalence Analysis Using SAEM and TOST}
+\title{MBbioeq: Model-Based Bioequivalence Analysis}
 \description{
-Performs model-based bioequivalence analysis for parallel-arm studies using Stochastic Approximation Expectation-Maximization (SAEM) estimation and Two One-Sided Tests (TOST) procedure. Supports 1- and 2-compartment pharmacokinetic models with optional absorption lag time. Implements Normal and Gallant corrections for TOST, and delta-method for Cmax variance calculation. Allows flexible random effects structures (diagonal, full, block) and multiple error models (additive, proportional, combined).
+MBbioeq performs \strong{model-based bioequivalence (BE) analysis} for
+parallel-arm studies using nonlinear mixed-effects pharmacokinetic (PK)
+modelling via the SAEM algorithm (Stochastic Approximation
+Expectation-Maximisation, as implemented in the \strong{saemix} package).
+
+Two testing procedures are available:
+\itemize{
+\item \strong{TOST} — Two One-Sided Tests with asymptotic normal inference
+and a small-sample Gallant correction.
+\item \strong{BOT} — Bayesian-Optimal Test based on the folded-normal
+distribution.
 }
+
+Both AUC (via the clearance parameter) and Cmax (via the delta method)
+are tested.  Only one-compartment PK models (with or without absorption
+lag time) are supported.
+}
+\section{Main functions}{
+
+\describe{
+\item{\code{prep_parallel_TR()}}{Pre-process a raw dataset for SAEMIX.}
+\item{\code{run_MBTost()}}{Fit the NLMEM and run the TOST procedure.}
+\item{\code{run_MBbot()}}{Fit the NLMEM and run the BOT procedure.}
+\item{\code{plot_spaghetti()}}{Individual PK concentration-time profiles.}
+\item{\code{plot_tost()}}{Forest plot of GMR and 90 \% CI from TOST.}
+\item{\code{plot_bot()}}{Folded-normal decision plot from BOT.}
+}
+}
+
 \author{
 \strong{Maintainer}: Eden BETE \email{eden.bete.etu@univ-lille.fr}
 
